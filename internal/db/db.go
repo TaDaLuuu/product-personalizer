@@ -2,9 +2,9 @@ package db
 
 import (
 	"fmt"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/gommon/log"
-	_ "github.com/lib/pq"
 )
 
 type Sql struct {
@@ -19,7 +19,7 @@ type Sql struct {
 func (s *Sql) Connect() {
 	dataSource := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		s.Host, s.Port, s.UserName, s.Password, s.DbName)
-	s.Db = sqlx.MustConnect("postgres", dataSource)
+	s.Db = sqlx.MustConnect("pgx", dataSource)
 	if err := s.Db.Ping(); err != nil {
 		log.Error(err.Error())
 	}
