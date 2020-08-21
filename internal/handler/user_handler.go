@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go-echo-real-project/internal/model"
@@ -92,7 +93,7 @@ func (u *UserHandler) SignIn(c echo.Context) error {
 		})
 	}
 
-	user, err := u.UserRepository.FindUser(c.Request().Context(), req)
+	user, err := u.UserRepository.FindUserByEmail(c.Request().Context(), req.Email)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, model.Response{
 			StatusCode: http.StatusBadRequest,
@@ -110,9 +111,41 @@ func (u *UserHandler) SignIn(c echo.Context) error {
 		})
 	}
 
+	token, err := utils.GenToken(user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	user.Token = token
+
 	return c.JSON(http.StatusOK, model.Response{
 		StatusCode: http.StatusOK,
 		Message:    "Đăng nhập thành kông",
+		Data:       user,
+	})
+}
+
+func (u *UserHandler) Profile(c echo.Context) error {
+	tokenData := c.Get("user").(*jwt.Token)
+	claims := tokenData.Claims.(*model.JWTCustomClaims)
+
+	user, err := u.UserRepository.FindUserByEmail(c.Request().Context(), claims.Email)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	return c.JSON(http.StatusOK, model.Response{
+		StatusCode: http.StatusOK,
+		Message:    "",
 		Data:       user,
 	})
 }
