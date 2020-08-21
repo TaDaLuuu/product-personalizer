@@ -73,5 +73,46 @@ func (u *UserHandler) SignUp(c echo.Context) error {
 }
 
 func (u *UserHandler) SignIn(c echo.Context) error {
-	return nil
+	// Bind data from request
+	req := request.SignInRequest{}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	// Validate data
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	user, err := u.UserRepository.FindUser(c.Request().Context(), req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	isPasswordValidated := utils.ComparePasswords(user.Password, []byte(req.Password))
+	if !isPasswordValidated {
+		return c.JSON(http.StatusBadRequest, model.Response{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Sai mật khẩu",
+			Data:       nil,
+		})
+	}
+
+	return c.JSON(http.StatusOK, model.Response{
+		StatusCode: http.StatusOK,
+		Message:    "Đăng nhập thành kông",
+		Data:       user,
+	})
 }
